@@ -4,36 +4,55 @@ using namespace std;
 
 const int MAXN = 1000005;
 
-int N, M, DP[MAXN][3];
+int N, M, cache[MAXN][3][3];
 string S;
+
+int f(int n, int a, int b)
+{
+    if(a > 2 || b > 2) return 0;
+    if(n == 0) {
+        // if(a != 0 || b != 0) return 0;
+        return 1;
+    }
+    int& ret = cache[n][a][b];
+    if(ret != -1) return ret;
+
+    ret = f(n-1, a+1, max(b-1, 0)) + f(n-1, max(a-1, 0), b+1);
+    ret %= M;
+    return ret;
+}
+
+void g(int n, int a, int b, string s, string ss)
+{
+    if(a > 2 || b > 2) return;
+    if(n == 0) {
+        // if(a != 0 || b != 0) return;
+        cout << ss+s << "\n";
+        return;
+    }
+
+    g(n-1, max(a-1, 0), b+1, s+'M', ss);
+    g(n-1, a+1, max(b-1, 0), s+'R', ss);
+}
 
 int main()
 {
     cin >> N >> M >> S;
     S = ' ' + S;
 
-    DP[1][0] = 1;
-    DP[1][1] = 1;
-
-    DP[2][0] = 2;
-    DP[2][1] = 1;
-    DP[2][2] = 1;
-    for(int i = 3; i <= N; i++) {
-        DP[i][2] = (DP[i-1][1]) % M;
-        DP[i][1] = (DP[i-1][2] + DP[i-1][0]) % M;
-        DP[i][0] = (DP[i-1][1] + 1) % M;
-    }
-
+    memset(cache, -1, sizeof(cache));
 
     int ans = 1;
-    int cnt = 0;
-    for(int i = 1; i <= N; i++) {
+    int cntR = 0, cntM = 0;
+    for(int i = 1; i <= N; i++) {   
         if(S[i] == 'R') {
-            if(cnt == 0) ans = (ans + DP[N-i+1][0] + DP[N-i+1][1]) % M;
-            else if(cnt == 1) ans = (ans + DP[N-i][0] + DP[N-i][1]) % M;
-            cnt = 0;
+            ans = (ans + f(N-i, max(cntR - 1, 0), cntM + 1)) % M;
+            // g(N-i, max(cntR - 1, 0), cntM + 1, "", S.substr(1, i-1)+'M');
+            cntR++;
+            cntM = max(cntM-1, 0);
         } else {
-            cnt++;
+            cntR = max(cntR-1, 0);
+            cntM++;
         }
     }
     cout << ans;
