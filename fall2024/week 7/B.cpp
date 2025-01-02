@@ -4,12 +4,12 @@ using namespace std;
 
 using ll = long long;
 
-const int MAXN = 100005;
+const ll MAXN = 100005;
 const ll MOD = 1e9 + 7;
 
 ll N, M, D[MAXN], C[MAXN], S[MAXN];
-vector<int> graph[MAXN];
-vector<pair<int, int>> edges;
+vector<ll> graph[MAXN];
+vector<pair<ll, ll>> edges;
 
 ll mypow(ll x, ll n)
 {
@@ -22,12 +22,12 @@ ll mypow(ll x, ll n)
 int main()
 {
     cin >> N >> M;
-    for(int i = 1; i <= N; i++) {
+    for(ll i = 1; i <= N; i++) {
         cin >> D[i];
         C[D[i]]++;
     }
-    for(int i = 1; i <= M; i++) {
-        int u, v;
+    for(ll i = 1; i <= M; i++) {
+        ll u, v;
         cin >> u >> v;
         if(D[u] > D[v]) swap(u, v);
         edges.emplace_back(u, v);
@@ -35,7 +35,7 @@ int main()
         else S[D[u]]++;
     }
 
-    for(int i = 2; i <= N; i++) {
+    for(ll i = 2; i <= N; i++) {
         if(D[i] == 0) {
             cout << "0";
             return 0;
@@ -50,7 +50,7 @@ int main()
     }
 
     ll ans = 1;
-    for(int i = 2; i <= N; i++) {
+    for(ll i = 2; i <= N; i++) {
         if(C[D[i]-1] == 0) {
             cout << "0";
             return 0;
@@ -62,8 +62,8 @@ int main()
         }
         ans %= MOD;
     }
-    for(int i = 1; i < N; i++) {
-        ll cnt = (C[i] * (C[i] - 1) / 2 - S[i]) % MOD;
+    for(ll i = 1; i < N; i++) {
+        ll cnt = C[i] * (C[i] - 1) / 2 - S[i];
         ans *= mypow(2, cnt);
         ans %= MOD;
     }
