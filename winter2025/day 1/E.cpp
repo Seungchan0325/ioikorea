@@ -4,101 +4,95 @@ using namespace std;
 
 using ll = long long;
 
-struct Rect {
-    ll x1, x2, y1, y2;
+const ll MAXN = 200005;
+
+struct T {
+    ll count;
+    ll area;
+    ll width;
 };
 
-const ll MAXN = 200050;
+ll N, lazy[4*MAXN], sz;
+T tree[4*MAXN];
+vector<ll> ys, xs;
 
-struct T
+void merge(T& t, T a, T b)
 {
-    ll tag;
-    ll sum;
-};
+    t.width = a.width + b.width;
+    if(t.count == 0) {
+        t.area = a.area + b.area;
+    }
+}
 
-const ll INF = 2e9;
-
-ll N;
-ll sz[8*MAXN];
-T tree[8*MAXN];
-vector<ll> xs, ys;
-
-ll Size;
-
-void init(ll s = 0, ll e = Size - 1, ll idx = 1)
+void build(ll s = 1, ll e = sz, ll idx = 1)
 {
     if(s == e) {
-        sz[idx] = ys[s+1] - ys[s];
+        tree[idx].width = xs[s] - xs[s-1];
         return;
     }
 
     ll m = (s + e) / 2;
-    init(s, m, 2*idx);
-    init(m+1, e, 2*idx+1);
-    sz[idx] = sz[2*idx] + sz[2*idx+1];
+    build(s, m, 2*idx);
+    build(m+1, e, 2*idx+1);
+    merge(tree[idx], tree[2*idx], tree[2*idx+1]);
 }
 
-void update(ll l, ll r, ll v, ll s = 0, ll e = Size - 1, ll idx = 1)
+void update(ll l, ll r, ll v, ll s = 1, ll e = sz, ll idx = 1)
 {
-    if(e < l || r < s) return;
+    if(r < s || e < l) return;
 
     if(l <= s && e <= r) {
-        if(tree[idx].tag += v) {
-            tree[idx].sum = sz[idx];
-        } else {
-            tree[idx].sum = tree[2*idx].sum + tree[2*idx+1].sum;
-        }
+        tree[idx].count += v;
+        if(tree[idx].count) tree[idx].area = tree[idx].width;
+        else if(s != e) tree[idx].area = tree[2*idx].area + tree[2*idx+1].area;
+        else tree[idx].area = 0;
         return;
     }
 
     ll m = (s + e) / 2;
     update(l, r, v, s, m, 2*idx);
     update(l, r, v, m+1, e, 2*idx+1);
-    if(tree[idx].tag == 0) tree[idx].sum = tree[2*idx].sum + tree[2*idx+1].sum;
-    else tree[idx].sum = sz[idx];
+    merge(tree[idx], tree[2*idx], tree[2*idx+1]);
 }
 
 int main()
 {
     cin >> N;
-    vector<Rect> rects(N);
-    for(ll i = 0; i < N; i++) {
-        cin >> rects[i].x1 >> rects[i].x2 >> rects[i].y1 >> rects[i].y2;
-        xs.push_back(rects[i].x1);
-        xs.push_back(rects[i].x2);
-        ys.push_back(rects[i].y1);
-        ys.push_back(rects[i].y2);
+    vector<tuple<ll, ll, ll, ll>> rect(N);
+    for(auto& [x1, x2, y1, y2] : rect) {
+        cin >> x1 >> x2 >> y1 >> y2;
+        xs.push_back(x1);
+        xs.push_back(x2);
+        ys.push_back(y1);
+        ys.push_back(y2);
     }
-    ys.push_back(-INF);
-    ys.push_back(INF);
-    xs.push_back(-INF);
-    xs.push_back(INF);
-    sort(ys.begin(), ys.end());
-    ys.erase(unique(ys.begin(), ys.end()), ys.end());
+
+    xs.push_back(-1);
+
     sort(xs.begin(), xs.end());
     xs.erase(unique(xs.begin(), xs.end()), xs.end());
+    sort(ys.begin(), ys.end());
+    ys.erase(unique(ys.begin(), ys.end()), ys.end());
 
-    vector<vector<tuple<ll, ll, ll>>> upds(xs.size());
-    for(ll i = 0; i < N; i++) {
-        ll s = lower_bound(xs.begin(), xs.end(), rects[i].x1) - xs.begin();
-        ll e = lower_bound(xs.begin(), xs.end(), rects[i].x2) - xs.begin();
-        ll top = lower_bound(ys.begin(), ys.end(), rects[i].y1) - ys.begin();
-        ll bottom = lower_bound(ys.begin(), ys.end(), rects[i].y2) - ys.begin() - 1;
-        upds[s].emplace_back(top, bottom, 1);
-        upds[e].emplace_back(top, bottom, -1);
+    sz = xs.size() - 1;
+    build();
+
+    vector<vector<tuple<ll, ll, ll>>> updates(ys.size() + 1);
+    for(auto [x1, x2, y1, y2] : rect) {
+        ll l = upper_bound(xs.begin(), xs.end(), x1) - xs.begin();
+        ll r = lower_bound(xs.begin(), xs.end(), x2) - xs.begin();
+        ll s = lower_bound(ys.begin(), ys.end(), y1) - ys.begin();
+        ll e = lower_bound(ys.begin(), ys.end(), y2) - ys.begin();
+        updates[s].emplace_back(l, r, 1);
+        updates[e].emplace_back(l, r, -1);
     }
-
 
     ll ans = 0;
-
-    Size = ys.size() - 1;
-    init();
-
-    for(ll i = 0; i < xs.size(); i++) {
-        for(auto [top, bottom, delta] : upds[i])
-            update(top, bottom, delta);
-        ans += (xs[i+1] - xs[i]) * tree[1].sum;
+    for(auto [l, r, w] : updates[0]) update(l, r, w);
+    for(ll i = 1; i < ys.size(); i++) {
+        ans += tree[1].area * (ys[i] - ys[i-1]);
+        for(auto [l, r, w] : updates[i])
+            update(l, r, w);
     }
-    
     cout << ans;
 }
