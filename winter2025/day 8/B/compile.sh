@@ -1,0 +1,1 @@
+g++ -o craft grader.cpp craft.cpp -O2 -Wall -std=c++17

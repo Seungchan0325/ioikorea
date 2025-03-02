@@ -1,0 +1,1 @@
+g++ grader.cpp division.cpp -o division -O2 -pipe -std=c++17 -Wall
